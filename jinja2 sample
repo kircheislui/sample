@@ -65,5 +65,16 @@
   
 
 
+- set_fact:
+    host_moid_list_combine: >-
+      {%- set output = [] -%}
+        {%- for item in host_moid_list -%}
+        {%- for item2 in item.host_moid -%}
+          {%- set _internaloutput = [ item2 ] -%}
+          {%- set _ = output.extend(_internaloutput)  -%}
+        {%- endfor -%}
+        {%- endfor -%}
+      {{ output }}    
+  tags: test2
 
   
