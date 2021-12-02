@@ -77,4 +77,7 @@
       {{ output }}    
   tags: test2
 
-  
+  - name: Combine the host moid list
+  set_fact:
+    host_moid_list_combine: "{{ host_moid_list_combine | default([]) + [ item.host_moid ] | flatten | unique }}"
+  loop: "{{ host_moid_list }}"
