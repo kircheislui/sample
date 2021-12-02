@@ -1,0 +1,69 @@
+
+
+
+
+## Example to create list 
+
+{ 
+[machine name]: {[disk uuid] :  { size : 1
+                             vdisk number: 1
+							 filename : "haa"
+							}, 
+				[disk uuid2] :  { size : 1
+                             vdisk number: 1
+							 filename : "haa"
+							}
+				}
+}
+
+
+- name: Get RDM list
+  set_fact:
+    RDM_list: |-
+      {%- set output = [] %}
+        {%- for item in vm_final_list -%}
+        {%- if item.backing_uuid is none -%}
+            {%- set _internaloutput = { item.vm_name: { item.lun_id: {'capacity_in_gb': item.capacity_in_gb } } } -%}
+            {%- set _ = _internaloutput[item.vm_name][item.lun_id].update({'fileName': item.fileName }) -%}
+            {%- set _ = _internaloutput[item.vm_name][item.lun_id].update({'virtial_device_node': item.virtial_device_node }) -%}
+            {%- set _ = output.append(_internaloutput) -%}
+        {%- endif -%}
+        {%- endfor -%}
+      {{ output }}
+  tags: test
+
+
+#- set_fact:
+#    vswitch_hosts_vswitch_info: |-
+#      {%- set output = [] %}
+#        {%- for item in async_pool_results_vswitch.results -%}
+#          {%- if item.hosts_vswitch_info is defined -%}
+#            {%- set _internaloutput = { item.async_result_item.async_item.hostname: {'owner': item.async_result_item.async_item.owner }  } -%}
+#            {%- set _ = _internaloutput[item.async_result_item.async_item.hostname].update({'hosts_vswitch_info': item.hosts_vswitch_info.keys() }) -%}
+#            {%- set _ = output.append(_internaloutput) -%}
+#          {%- endif -%}
+#        {%- endfor -%}
+#      {{ output | unique }}
+
+
+- name: sunny sample
+  set_fact:
+    vm_disk_info_list: |-
+      {%- set output = [] %}
+      {%- for item in vm_disk_info.results -%}
+          {%- set _internaloutput = {} %}
+          {%- set _ = _internaloutput.update({'vm_name': item.vm_name_item }) %}
+          {%- set _internaloutput2 = [] %}
+          {%- for item2 in item.guest_disk_info | dict2items -%}
+              {%- set _ = _internaloutput2.append(item2.value) %}
+          {%- endfor -%}
+          {%- set _ = _internaloutput.update({'vm_disk_info': _internaloutput2 }) %}
+          {%- set _ = output.append(_internaloutput) %}
+      {%- endfor -%}
+      {{ output }}
+  tags: test
+  
+
+
+
+  
