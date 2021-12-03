@@ -1,0 +1,191 @@
+TASK [VMWare_vSphere_VM_resource_assignment : Gather Managed object ID (moid) from a VM name] ***
+ok: [localhost] => changed=false 
+  ansible_facts:
+    ansible_all_ipv4_addresses:
+    - 10.194.96.141
+    - 169.254.1.1
+    ansible_bios_date: '2017-02-17T00:00:00+00:00'
+    ansible_bios_version: I36
+    ansible_datastore:
+    - free: 76.82 GB
+      name: NPESXST301_Local
+      total: 271.75 GB
+    - free: 958.30 GB
+      name: STESSDS3PAR01-DEV-ESX01
+      total: 6.00 TB
+    - free: 1.08 TB
+      name: STESSDS3PAR01-DEV-ESX02
+      total: 6.00 TB
+    - free: 739.98 GB
+      name: STESSDS3PAR01-DEV-ESX03
+      total: 6.00 TB
+    - free: 1.50 TB
+      name: STESSDS3PAR01-DEV-ESX04
+      total: 6.00 TB
+    - free: 1.29 TB
+      name: TESTPATH_3PAR001
+      total: 2.00 TB
+    - free: 119.23 GB
+      name: STESSDS3PAR01-DEV-DeepSecurity-01
+      total: 199.75 GB
+    - free: 1.95 TB
+      name: VM-TEMPLATE05
+      total: 6.00 TB
+    - free: 5.11 TB
+      name: VM-TEMPLATE06
+      total: 6.00 TB
+    - free: 3.97 TB
+      name: STESSDS3PAR01-DEV-ESX05
+      total: 6.00 TB
+    - free: 4.24 TB
+      name: STDEV:ISO02
+      total: 6.00 TB
+    ansible_distribution: VMware ESXi
+    ansible_distribution_build: '5050593'
+    ansible_distribution_version: 6.0.0
+    ansible_hostname: 10.194.96.141
+    ansible_in_maintenance_mode: false
+    ansible_interfaces:
+    - vmk0
+    - vmk1
+    ansible_memfree_mb: 410718
+    ansible_memtotal_mb: 524158
+    ansible_os_type: vmnix-x86
+    ansible_processor: Intel(R) Xeon(R) CPU E5-2698 v4 @ 2.20GHz
+    ansible_processor_cores: 40
+    ansible_processor_count: 2
+    ansible_processor_vcpus: 80
+    ansible_product_name: ProLiant BL460c Gen9
+    ansible_product_serial: SGH714X5AA
+    ansible_system_vendor: HP
+    ansible_uptime: 4783255
+    ansible_vmk0:
+      device: vmk0
+      ipv4:
+        address: 10.194.96.141
+        netmask: 255.255.255.0
+      macaddress: 00:17:a4:77:3c:00
+      mtu: 1500
+    ansible_vmk1:
+      device: vmk1
+      ipv4:
+        address: 169.254.1.1
+        netmask: 255.255.255.0
+      macaddress: 00:50:56:6f:bc:27
+      mtu: 1500
+    cluster: DEV01_RDM_3PAR
+    vsan_cluster_uuid: null
+    vsan_health: unknown
+    vsan_node_uuid: null
+	
+	
+	############################
+	
+
+TASK [VMWare_vSphere_VM_resource_assignment : set_fact] ************************
+ok: [localhost] => changed=false 
+  ansible_facts:
+    ram_capacity_usage_list:
+    - host_moid: host-54879
+      host_ram_capacity_GB: 523.773
+      host_ram_percentage: 1.188
+      host_ram_usage_GB: 6.221
+    - host_moid: host-55613
+      host_ram_capacity_GB: 523.773
+      host_ram_percentage: 1.268
+      host_ram_usage_GB: 6.641
+    - host_moid: host-62010
+      host_ram_capacity_GB: 523.773
+      host_ram_percentage: 6.151
+      host_ram_usage_GB: 32.218
+    - host_moid: host-52015
+      host_ram_capacity_GB: 523.773
+      host_ram_percentage: 23.854
+      host_ram_usage_GB: 124.943
+    - host_moid: host-8700
+      host_ram_capacity_GB: 523.773
+      host_ram_percentage: 51.819
+      host_ram_usage_GB: 271.416
+    - host_moid: host-54802
+      host_ram_capacity_GB: 523.773
+      host_ram_percentage: 59.503
+      host_ram_usage_GB: 311.662
+    - host_moid: host-54598
+      host_ram_capacity_GB: 523.773
+      host_ram_percentage: 59.73
+      host_ram_usage_GB: 312.852
+    - host_moid: host-54594
+      host_ram_capacity_GB: 523.773
+      host_ram_percentage: 64.789
+      host_ram_usage_GB: 339.348
+    - host_moid: host-52853
+      host_ram_capacity_GB: 523.773
+      host_ram_percentage: 68.438
+      host_ram_usage_GB: 358.458
+    - host_moid: host-52833
+      host_ram_capacity_GB: 523.773
+      host_ram_percentage: 69.032
+      host_ram_usage_GB: 361.571
+    - host_moid: host-63219
+      host_ram_capacity_GB: 523.773
+      host_ram_percentage: 80.41
+      host_ram_usage_GB: 421.166
+    - host_moid: host-54592
+      host_ram_capacity_GB: 523.773
+      host_ram_percentage: 90.303
+      host_ram_usage_GB: 472.984
+	  
+	  
+	 	############################
+
+
+		  ansible_facts:
+    cpu_capacity_usage_list:
+    - host_cpu_capacity_GHz: 73.504
+      host_cpu_percentage: 0.38
+      host_cpu_usage_GHz: 0.279
+      host_moid: host-55613
+    - host_cpu_capacity_GHz: 87.88
+      host_cpu_percentage: 0.448
+      host_cpu_usage_GHz: 0.394
+      host_moid: host-54879
+    - host_cpu_capacity_GHz: 87.88
+      host_cpu_percentage: 2.043
+      host_cpu_usage_GHz: 1.795
+      host_moid: host-52015
+    - host_cpu_capacity_GHz: 87.88
+      host_cpu_percentage: 3.685
+      host_cpu_usage_GHz: 3.238
+      host_moid: host-62010
+    - host_cpu_capacity_GHz: 87.88
+      host_cpu_percentage: 5.409
+      host_cpu_usage_GHz: 4.753
+      host_moid: host-8700
+    - host_cpu_capacity_GHz: 87.88
+      host_cpu_percentage: 9.576
+      host_cpu_usage_GHz: 8.415
+      host_moid: host-54802
+    - host_cpu_capacity_GHz: 87.88
+      host_cpu_percentage: 22.003
+      host_cpu_usage_GHz: 19.336
+      host_moid: host-54592
+    - host_cpu_capacity_GHz: 73.504
+      host_cpu_percentage: 24.888
+      host_cpu_usage_GHz: 18.294
+      host_moid: host-54594
+    - host_cpu_capacity_GHz: 73.504
+      host_cpu_percentage: 29.102
+      host_cpu_usage_GHz: 21.391
+      host_moid: host-52833
+    - host_cpu_capacity_GHz: 87.88
+      host_cpu_percentage: 29.837
+      host_cpu_usage_GHz: 26.221
+      host_moid: host-63219
+    - host_cpu_capacity_GHz: 73.504
+      host_cpu_percentage: 30.054
+      host_cpu_usage_GHz: 22.091
+      host_moid: host-52853
+    - host_cpu_capacity_GHz: 73.504
+      host_cpu_percentage: 30.756
+      host_cpu_usage_GHz: 22.607
+      host_moid: host-54598
