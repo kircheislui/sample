@@ -1,0 +1,25 @@
+- debug:
+    var: cpu_mem_list
+  tags: test1
+  
+- set_fact:
+    error: |-
+      {%- set output = [] -%}
+        {%- set _internaloutput = {} -%}
+          {% if cpu_mem_list[0].host_cpu_percentage > warning_cpu_percentage  %}
+          {%- set _ = _internaloutput.update({'CPU Consumption over(%)': cpu_mem_list[0].host_cpu_percentage }) -%}
+          {%- endif -%}
+          {% if cpu_mem_list[0].host_ram_percentage > warning_ram_percentage  %}
+          {%- set _ = _internaloutput.update({'RAM Consumption over(%)': cpu_mem_list[0].host_ram_percentage }) -%}
+          {%- endif -%}
+        {%- set _ = output.append(_internaloutput) %}
+      {{ output }} 
+    least_5_CPURAM_HOSTS: |-
+      {%- set output2 = [] -%}
+        {%- for item in cpu_mem_list -%}
+          {%- set _internaloutput2 = { item.host_moid: {'CPU Consumption(%)': item.host_cpu_percentage } } -%}
+          {%- set _ = _internaloutput2[item.host_moid].update({'RAM Consumption(%)': item.host_ram_percentage }) -%}
+          {%- set _ = output2.append(_internaloutput2) %}
+        {%- endfor -%}
+      {{ output2 }}
+  tags: test1
