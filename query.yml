@@ -1,0 +1,29 @@
+- set_fact:
+    list_nu: 0
+  tags: test1
+
+- set_fact:
+    cpu_mem_list: >-
+      {%- set output = [] %}
+       {%- for item1 in cpu_capacity_usage_list -%}
+       {%- for item2 in ram_capacity_usage_list -%}
+            {% if item1.host_moid == item2.host_moid -%}
+             {%- set _internaloutput = {} %}
+             {%- set _ = _internaloutput.update({'host_moid': item1.host_moid }) %}
+             {%- set _ = _internaloutput.update({'host_ram_capacity_GB': item2.host_ram_capacity_GB }) %}
+             {%- set _ = _internaloutput.update({'host_ram_percentage': item2.host_ram_percentage }) %}
+             {%- set _ = _internaloutput.update({'host_ram_usage_GB': item2.host_ram_usage_GB }) %}
+             {%- set _ = _internaloutput.update({'host_cpu_capacity_GHz': item1.host_cpu_capacity_GHz }) %}
+             {%- set _ = _internaloutput.update({'host_cpu_percentage': item1.host_cpu_percentage }) %}
+             {%- set _ = _internaloutput.update({'host_cpu_usage_GHz': item1.host_cpu_usage_GHz }) %}
+             {%- set _ = output.append(_internaloutput) %}
+            {%- endif %}
+       {%- endfor -%}
+       {%- endfor -%}
+      {{ (output | unique | sort(attribute='host_cpu_percentage,host_ram_percentage')) }}
+  tags: test1
+
+- fail:
+    msg: warning
+  when: cpu_mem_list[list_nu].host_cpu_percentage | int > warning_cpu_percentage
+  tags: test1
