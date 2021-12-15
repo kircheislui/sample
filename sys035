@@ -23,3 +23,6 @@
 The playbook logic will as below
 1) Only create group if it do not exist
 2) Create user if the user do not exist and the groups assigned to the user must all exist
+
+
+http://epb.corp.hkjc.com/sites/itios/portal/is/Shared%20Documents/Forms/AllItems.aspx?RootFolder=%2Fsites%2Fitios%2Fportal%2Fis%2FShared%20Documents%2FITI%20Projects%2F02%2E%20Projects%20Repository%2F144485%20%2D%20Infrastructure%20Automation%20Phase%202%2FIA%20PHase2%20workflow%20testing%20result%2FAnsible%20Demo%2Fsys%2E035%20windows%5Fad%5Fadd%5Facct%5Fdomain%5Fgroup&InitialTabId=Ribbon%2EDocument&VisibilityContext=WSSTabPersistence
