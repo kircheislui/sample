@@ -1,0 +1,25 @@
+1) Create Domain group with the following input
+     - Group Name
+     - Group Scope (Domain Local, Global, Universal)
+     - Description:
+          - when the group is created
+          - who request to create 
+          - the manager that approval the creation
+
+2) Create Domain user with the following input
+     - First Name
+     - Last Name
+     - A list of groups where the user belong to
+     - Name (account name)
+     - Password 
+     - User Cannot change password set to false
+     - User Must change password when first login set to true
+     - Account expiry set to Never 
+     - Description
+          - when the group is created
+          - who request to create 
+          - the manager that approval the creation
+
+The playbook logic will as below
+1) Only create group if it do not exist
+2) Create user if the user do not exist and the groups assigned to the user must all exist
