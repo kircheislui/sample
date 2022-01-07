@@ -1,0 +1,390 @@
+[root@apansibletower01 portal]# cat vcenter_pre_checking.yml
+- hosts: localhost
+  gather_facts: no
+  connection: local
+  vars:
+      hostname: nccvc1.smartone.com
+#      hostname: apvc1.smc.local
+      username: ansibleadm
+      password: V1ohh~jHSxoj
+      p_datacenter_name: NCC
+      p_cluster_name: NCC CorpLAN (IS)
+  tasks:
+
+###################################################################
+###################################################################
+
+
+### Find the least consumed datastore within delegated vcenter and cluster
+
+  - name: Test Vcenter connection
+    vmware_datastore_info:
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      cluster: "{{ p_cluster_name }}"
+      validate_certs: no
+      gather_vmfs_mount_info: yes
+    register: results
+    tags: storage
+
+  - debug:
+      var: results
+    tags: storage
+
+  - set_fact:
+      datastore_consumption_list: >
+        {%- set output = [] -%}
+          {%- for item in results.datastores -%}
+              {% if item.maintenanceMode == 'normal' %}
+              {%- set _internaloutput = {} -%}
+              {%- set _ = _internaloutput.update({'maintenanceMode': item.maintenanceMode }) -%}
+              {%- set _ = _internaloutput.update({'freeSpace': item.freeSpace }) -%}
+              {%- set _ = _internaloutput.update({'provisioned': item.provisioned }) -%}
+              {%- set _ = _internaloutput.update({'name': item.name }) -%}
+              {%- set _ = _internaloutput.update({'capacity': item.capacity }) -%}
+              {%- set _ = _internaloutput.update({'provisioned_percentage': ((item.provisioned | human_to_bytes / item.capacity | human_to_bytes) * 100) | round(2, 'common') }) -%}
+              {%- set _ = output.append(_internaloutput) -%}
+              {%- endif -%}
+          {%- endfor -%}
+        {{ output | unique | sort(attribute='provisioned_percentage') }}
+    tags: storage
+
+  - name: Print the least consumed datastore
+    debug:
+      var: datastore_consumption_list[0].name
+    tags: storage
+#
+######################################################################
+
+## Define avaible esxi host within delegated vcenter and cluster
+
+
+  - name: Use host moid to retreive datacenter
+    uri:
+      url: https://{{ hostname }}/mob/?moid=group-d1
+      force_basic_auth: yes
+      validate_certs: no
+      method: GET
+      user: "{{ username }}"
+      password: "{{ password }}"
+      return_content: yes
+    register: host_datacenter
+
+  - name: Use host moid to retreive datacenter
+    uri:
+      url: https://{{ hostname }}/mob/?moid={{ item }}
+      force_basic_auth: yes
+      validate_certs: no
+      method: GET
+      user: "{{ username }}"
+      password: "{{ password }}"
+      return_content: yes
+    register: host_datacenter_name
+    loop: "{{ datacenter_list }}"
+    vars:
+      datacenter_list: "{{ host_datacenter.content | regex_findall('<ManagedObjectReference[^>]*>(.*?)</ManagedObjectReference>') }}"
+
+  - set_fact:
+      host_datacenter_name_list: |-
+        {%- set output = [] -%}
+          {%- for item in host_datacenter_name.results -%}
+              {% if item.content | regex_findall('<name[^>]*>(.*?)</name>') | first == p_datacenter_name | regex_replace('&(.*)$', '&amp;\\1') %}
+              {%- set _internaloutput = {} -%}
+              {%- set _ = _internaloutput.update({'datacenter_name': item.content | regex_findall('<name[^>]*>(.*?)</name>') | first | regex_replace('&amp;(.*)$', '&\\1') }) -%}
+              {%- set _ = _internaloutput.update({'datacenter_moid': item.item }) -%}
+              {%- set _ = output.append(_internaloutput) -%}
+              {% endif %}
+          {%- endfor -%}
+        {{ output }}
+
+  - debug:
+      var: host_datacenter_name_list
+
+  - name: Use datacenter moid to retreive hostFolder
+    uri:
+      url: https://{{ hostname }}/mob/?moid={{ item.datacenter_moid }}
+      force_basic_auth: yes
+      validate_certs: no
+      method: GET
+      user: "{{ username }}"
+      password: "{{ password }}"
+      return_content: yes
+    register: host_folder
+    loop: "{{ host_datacenter_name_list }}"
+
+  - debug:
+      var: host_folder.results[0].content | regex_findall('<hostFolder[^>]*>(.*?)</hostFolder>')
+
+  - name: Use hostFolder moid to retreive domain moid
+    uri:
+      url: https://{{ hostname }}/mob/?moid={{ item }}
+      force_basic_auth: yes
+      validate_certs: no
+      method: GET
+      user: "{{ username }}"
+      password: "{{ password }}"
+      return_content: yes
+    register: domain_list
+    loop: "{{ hostFolder_moid }}"
+    vars:
+      hostFolder_moid: "{{ host_folder.results[0].content | regex_findall('<hostFolder[^>]*>(.*?)</hostFolder>') }}"
+
+  - debug:
+      var: domain_list.results[0].content | regex_findall('<ManagedObjectReference type=\"ClusterComputeResource\"[^>]*>(.*?)</ManagedObjectReference>')
+
+
+  - name: Use domain moid to retreive domain name
+    uri:
+      url: https://{{ hostname }}/mob/?moid={{ item }}
+      force_basic_auth: yes
+      validate_certs: no
+      method: GET
+      user: "{{ username }}"
+      password: "{{ password }}"
+      return_content: yes
+    register: domain_list
+    loop: "{{ domain_moid }}"
+    vars:
+      domain_moid: "{{ domain_list.results[0].content | regex_findall('<ManagedObjectReference type=\"ClusterComputeResource\"[^>]*>(.*?)</ManagedObjectReference>') }}"
+
+  - set_fact:
+      domain_name_list: |-
+        {%- set output = [] -%}
+          {%- for item in domain_list.results -%}
+              {% if item.content | regex_findall('<name xmlns[^>]*>(.*?)</name>') | first == p_cluster_name | regex_replace('&(.*)$', '&amp;\\1') %}
+              {%- set _internaloutput = {} -%}
+              {%- set _ = _internaloutput.update({'domain_name': item.content | regex_findall('<name xmlns[^>]*>(.*?)</name>') | first | regex_replace('&amp;(.*)$', '&\\1') }) -%}
+              {%- set _ = _internaloutput.update({'domain_moid': item.item }) -%}
+              {%- set _ = output.append(_internaloutput) -%}
+              {% endif %}
+          {%- endfor -%}
+        {{ output }}
+
+  - debug:
+      var: domain_name_list
+
+########################################################################
+
+
+#######################################################################
+#
+  - name: Use domain moid to retreive esxi list
+    uri:
+      url: https://{{ hostname }}/mob/?moid={{ item.domain_moid }}
+      force_basic_auth: yes
+      validate_certs: no
+      method: GET
+      user: "{{ username }}"
+      password: "{{ password }}"
+      return_content: yes
+    register: esxi_moid
+    loop: "{{ domain_name_list }}"
+
+  - debug:
+      var: esxi_moid
+
+
+#######################################################################
+  - name: Use esxi moid to retreive datastore name
+    uri:
+      url: https://{{ hostname }}/mob/?moid={{ item }}&doPath=info
+      force_basic_auth: yes
+      validate_certs: no
+      method: GET
+      user: "{{ username }}"
+      password: "{{ password }}"
+      return_content: yes
+    register: datastore_list
+    loop: "{{ esxi_moid_list }}"
+    vars:
+      esxi_moid_list: "{{ esxi_moid.results[0].content | regex_findall('<ManagedObjectReference type=\"Datastore\"[^>]*>(.*?)</ManagedObjectReference>') }}"
+
+
+  - set_fact:
+      datastore_name_list: |-
+        {%- set output = [] -%}
+          {%- for item in datastore_list.results -%}
+              {%- set _internaloutput = {} -%}
+              {%- set _ = _internaloutput.update({'datastore_name': item.content | regex_findall('<name[^>]*>(.*?)</name>') | first  }) -%}
+              {%- set _ = _internaloutput.update({'datastore_moid': item.item }) -%}
+              {%- set _ = output.append(_internaloutput) -%}
+          {%- endfor -%}
+        {{ output }}
+
+  - name: Use esxi moid to retreive datastore customfield
+    uri:
+      url: https://{{ hostname }}/mob/?moid={{ item }}
+      force_basic_auth: yes
+      validate_certs: no
+      method: GET
+      user: "{{ username }}"
+      password: "{{ password }}"
+      return_content: yes
+    register: datastore_key_list
+    loop: "{{ esxi_moid_list }}"
+    vars:
+      esxi_moid_list: "{{ esxi_moid.results[0].content | regex_findall('<ManagedObjectReference type=\"Datastore\"[^>]*>(.*?)</ManagedObjectReference>') }}"
+
+
+  - set_fact:
+      datastore_name_list: |-
+        {%- set output = [] -%}
+          {%- for item in datastore_key_list.results -%}
+              {%- set _internaloutput = {} -%}
+              {%- set _ = _internaloutput.update({'datastore_key': item.content | regex_findall('<key[^>]*>(.*?)</key>')  }) -%}
+              {%- set _ = _internaloutput.update({'datastore_moid': item.item }) -%}
+              {%- set _ = output.append(_internaloutput) -%}
+          {%- endfor -%}
+        {{ output }}
+
+  - debug:
+      var: datastore_name_list
+
+
+#######################################################################
+#  - name: Use esxi moid to retreive esxi name
+#    uri:
+#      url: https://{{ hostname }}/mob/?moid={{ item }}
+#      force_basic_auth: yes
+#      validate_certs: no
+#      method: GET
+#      user: "{{ username }}"
+#      password: "{{ password }}"
+#      return_content: yes
+#    register: esxi_list
+#    loop: "{{ esxi_moid_list }}"
+#    vars:
+#      esxi_moid_list: "{{ esxi_moid.results[0].content | regex_findall('<ManagedObjectReference type=\"HostSystem\"[^>]*>(.*?)</ManagedObjectReference>') }}"
+#
+#  - set_fact:
+#      esxihost_name_list: |-
+#        {%- set output = [] -%}
+#          {%- for item in esxi_list.results -%}
+#              {%- set _internaloutput = {} -%}
+#              {%- set _ = _internaloutput.update({'esxihost_name': item.content | regex_findall('<config><name[^>]*>(.*?)</name>') | first | regex_replace('&amp;(.*)$', '&\\1') }) -%}
+#              {%- set _ = _internaloutput.update({'esxihost_moid': item.item }) -%}
+#              {%- set _ = output.append(_internaloutput) -%}
+#          {%- endfor -%}
+#        {{ output }}
+#
+#  - debug:
+#      var: esxihost_name_list
+#
+#
+#              #{%- set _ = _internaloutput.update({'esxihost_name': item.content | regex_findall('<name[^>]*>(.*?)</name>') | first | regex_replace('&amp;(.*)$', '&\\1') }) -%}
+#######################################################################
+### Find the highest Memory esxi host
+##
+#  - name: Use host moid to retreive host memory capacity
+#    uri:
+#      url: https://{{ hostname }}/mob/?moid={{ item.esxihost_moid }}&doPath=config%2esystemResources%2econfig%2ememoryAllocation
+#      force_basic_auth: yes
+#      validate_certs: no
+#      method: GET
+#      user: "{{ username }}"
+#      password: "{{ password }}"
+#      return_content: yes
+#    loop: "{{ esxihost_name_list }}"
+#    register: host_ram_capacity
+#    tags: ram
+#
+#  - name: Use host moid to retreive host ram usage
+#    uri:
+#      url: https://{{ hostname }}/mob/?moid={{ item.esxihost_moid }}&doPath=summary.quickStats
+#      force_basic_auth: yes
+#      validate_certs: no
+#      method: GET
+#      user: "{{ username }}"
+#      password: "{{ password }}"
+#      return_content: yes
+#    loop: "{{ esxihost_name_list }}"
+#    register: host_ram_usage
+#    tags: ram
+#
+#  - name: Use host moid to retreive host ram usage
+#    uri:
+#      url: https://{{ hostname }}/mob/?moid={{ item.esxihost_moid }}&doPath=summary.runtime
+#      force_basic_auth: yes
+#      validate_certs: no
+#      method: GET
+#      user: "{{ username }}"
+#      password: "{{ password }}"
+#      return_content: yes
+#    loop: "{{ esxihost_name_list }}"
+#    register: host_maintaince
+#    tags: ram
+#
+#  - debug:
+#      var: host_maintaince.results[0].content |regex_findall('<inMaintenanceMode[^>]*>(.*?)</inMaintenanceMode>')
+#
+#  - set_fact:
+#      ram_capacity_list: |-
+#        {%- set output = [] -%}
+#          {%- for item in host_ram_capacity.results -%}
+#              {%- set _internaloutput = {} -%}
+#              {%- set _ = _internaloutput.update({'host_ram_capacity': (item.content | regex_findall('<reservation[^>]*>(.*?)</reservation>') | first | int) / 1000 }) -%}
+#              {%- set _ = _internaloutput.update({'host_moid': item.item }) -%}
+#              {%- set _ = output.append(_internaloutput) -%}
+#          {%- endfor -%}
+#        {{ output }}
+#    tags: ram
+#
+#  - set_fact:
+#      ram_usage_list: |-
+#        {%- set output = [] -%}
+#          {%- for item in host_ram_usage.results -%}
+#              {%- set _internaloutput = {} -%}
+#              {%- set _ = _internaloutput.update({'host_ram_usage': (item.content | regex_findall('<overallMemoryUsage[^>]*>(.*?)</overallMemoryUsage>') | first | int) / 1000 }) -%}
+#              {%- set _ = _internaloutput.update({'host_moid': item.item }) -%}
+#              {%- set _ = output.append(_internaloutput) -%}
+#          {%- endfor -%}
+#        {{ output }}
+#    tags: ram
+#
+#  - set_fact:
+#      host_inMaintenanceMode_list: |-
+#        {%- set output = [] -%}
+#          {%- for item in host_maintaince.results -%}
+#              {% if item.content | regex_findall('<inMaintenanceMode[^>]*>(.*?)</inMaintenanceMode>') | first == 'false' %}
+#              {%- set _internaloutput = {} -%}
+#              {%- set _ = _internaloutput.update({'host_inMaintenanceMode': item.content | regex_findall('<inMaintenanceMode[^>]*>(.*?)</inMaintenanceMode>') | first }) -%}
+#              {%- set _ = _internaloutput.update({'host_moid': item.item }) -%}
+#              {%- set _ = output.append(_internaloutput) -%}
+#              {% endif %}
+#          {%- endfor -%}
+#        {{ output }}
+#    tags: ram
+#
+#  - set_fact:
+#      ram_capacity_usage_list: |-
+#        {%- set output = [] -%}
+#          {%- for item in ram_capacity_list -%}
+#          {%- for item2 in ram_usage_list -%}
+#          {%- for item3 in host_inMaintenanceMode_list -%}
+#            {%  if item.host_moid == item2.host_moid and item.host_moid == item3.host_moid %}
+#              {%- set _internaloutput = {} -%}
+#              {%- set _ = _internaloutput.update({'host_ram_capacity_GB': item.host_ram_capacity }) -%}
+#              {%- set _ = _internaloutput.update({'host_ram_usage_GB': item2.host_ram_usage }) -%}
+#              {%- set _ = _internaloutput.update({'host_ram_percentage': ((item2.host_ram_usage / item.host_ram_capacity) * 100) | round(3, 'common') }) -%}
+#              {%- set _ = _internaloutput.update({'host_ram_free_GB': (item.host_ram_capacity - item2.host_ram_usage) | round(3, 'common') }) -%}
+#              {%- set _ = _internaloutput.update({'host_moid': item.host_moid.esxihost_moid }) -%}
+#              {%- set _ = _internaloutput.update({'host_name': item.host_moid.esxihost_name }) -%}
+#              {%- set _ = _internaloutput.update({'host_inMaintenanceMode': item3.host_inMaintenanceMode }) -%}
+#              {%- set _ = output.append(_internaloutput) -%}
+#            {%- endif -%}
+#          {%- endfor -%}
+#          {%- endfor -%}
+#          {%- endfor -%}
+#        {{ output | unique | sort(attribute='host_ram_free_GB', reverse=true) }}
+#    tags: ram
+#
+#  - debug:
+#      var: ram_capacity_usage_list
+#    tags: ram
+#
+#  - set_fact:
+#      a_esxi_hostname: "{{ ram_capacity_usage_list[0].host_name }}"
+#
+#  - debug:
+#      var: a_esxi_hostname
