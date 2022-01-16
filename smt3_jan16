@@ -1,0 +1,133 @@
+---
+- set_fact:
+    batch:
+    - cluster: clusterA
+      datacenter: datacenterA
+      datastore_tag: yellow,red,blue
+      department: yellow_department
+      vcenter: vcenterA
+    - cluster: clusterA
+      datacenter: datacenterA
+      datastore_tag: yellow
+      department: red_department1
+      vcenter: vcenterA
+    - cluster: clusterA
+      datacenter: datacenterA
+      datastore_tag: red
+      department: red_department2
+      vcenter: vcenterA
+    - cluster: clusterB
+      datacenter: datacenterA
+      datastore_tag: red
+      department: red_department
+      vcenter: vcenterA
+
+- name: unique cluster
+  set_fact:
+    batch_v1: |-
+      {%- set output = [] %}
+        {%- for item in batch -%}
+            {%- set _internaloutput = {} -%}
+            {%- set _ = _internaloutput.update({'cluster': item.cluster }) -%}
+            {%- set _ = _internaloutput.update({'datecenter': item.datacenter }) -%}
+            {%- set _ = _internaloutput.update({'vcenter': item.vcenter }) -%}
+            {%- set _ = output.append(_internaloutput) -%}
+        {%- endfor -%}
+      {{ output | unique }}
+
+- name: Gather datastore by cluster
+  set_fact:
+    datastore:
+    - cluster: clusterA
+      datastore_list:
+      - name: datastore1
+        tag: redhat
+      - name: datastore2
+        tag: blue,yellow
+    - cluster: clusterB
+      datastore_list:
+      - name: datastore3
+        tag: red
+
+- name: Gather esxi by cluster
+  set_fact:
+    esxi:
+    - cluster: clusterA
+      esxi_list:
+      - name: esxi1
+        memory: 100
+      - name: esxi2
+        memory: 200
+    - cluster: clusterB
+      esxi_list:
+      - name: esxi3
+        memory: 300
+   
+- name: Combine datastore and esxi to original batch list
+  set_fact:
+    combine_list: |-
+      {%- set output = [] %}
+        {%- for item in batch -%}
+        {%- for item2 in datastore -%}
+          {%- if item.cluster == item2.cluster -%}
+            {%- set _internaloutput = {} -%}
+            {%- set _ = _internaloutput.update({'cluster': item.cluster }) -%}
+            {%- set _ = _internaloutput.update({'datecenter': item.datacenter }) -%}
+            {%- set _ = _internaloutput.update({'department': item.department }) -%}
+            {%- set _ = _internaloutput.update({'vcenter': item.vcenter }) -%}
+            {%- set _ = _internaloutput.update({'datastore_tag': item.datastore_tag }) -%}
+            {%- set _internaloutput2 = [] -%}
+              {%- for item3 in item2.datastore_list -%}
+              {%- for item4 in item3.tag.split(',')-%}
+              {%- for item5 in item.datastore_tag.split(',') -%}
+              {%- if item4 == item5 and item3.tag | length > 0 -%}
+                  {%- set _ = _internaloutput2.append({'name': item3.name, 'tag': item3.tag}) -%}
+              {%- endif -%}
+              {%- endfor -%}
+              {%- endfor -%}
+              {%- endfor -%}
+            {%- set _ = _internaloutput.update({'datastore': _internaloutput2 | unique }) -%}
+            {%- set _ = output.append(_internaloutput) -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {%- endfor -%}
+      {{ output }}
+
+- name: Combine datastore and esxi to original batch list
+  set_fact:
+    combine_list: |-
+      {%- set output = [] %}
+        {%- for item in batch -%}
+        {%- for item2 in datastore -%}
+          {%- if item.cluster == item2.cluster -%}
+            {%- set _internaloutput = {} -%}
+            {%- set _ = _internaloutput.update({'cluster': item.cluster }) -%}
+            {%- set _ = _internaloutput.update({'datecenter': item.datacenter }) -%}
+            {%- set _ = _internaloutput.update({'department': item.department }) -%}
+            {%- set _ = _internaloutput.update({'vcenter': item.vcenter }) -%}
+            {%- set _ = _internaloutput.update({'datastore_tag': item.datastore_tag }) -%}
+            {%- set _internaloutput2 = [] -%}
+              {%- for item3 in item2.datastore_list -%}
+              {%- for item4 in item3.tag.split(',')-%}
+              {%- for item5 in item.datastore_tag.split(',') -%}
+              {%- if item4 == item5 and item3.tag | length > 0 -%}
+                  {%- set _ = _internaloutput2.append({'name': item3.name, 'tag': item3.tag}) -%}
+              {%- endif -%}
+              {%- endfor -%}
+              {%- endfor -%}
+              {%- endfor -%}
+            {%- set _ = _internaloutput.update({'datastore': _internaloutput2 | unique }) -%}
+            {%- set _ = _internaloutput.update({'esxi': "" }) -%}
+
+              {%- for item6 in esxi -%}
+              {%- if item.cluster == item6.cluster -%}
+                  {%- set _ = _internaloutput.update({'esxi': item6.esxi_list }) -%}
+              {%- endif -%}
+              {%- endfor -%}
+
+            {%- set _ = output.append(_internaloutput) -%}
+          {%- endif -%}
+          
+        {%- endfor -%}
+        {%- endfor -%}
+      {{ output }}
