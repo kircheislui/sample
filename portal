@@ -1,0 +1,56 @@
+		  //handle cluster change and select the vlan and gateway again
+			  
+			 	var network_change_value =  $("#input_Network").val("");
+			 	var cluster_change_value =  $("#input_Cluster").val();
+			  	var vlan_change_value= $("#input_Vlan").val(); 
+			  	var ldap_group_name =   $('#input_Owner').val();
+			  	 
+			  	 
+			 
+			  	 <%for(MasterRuleBean masterRuleBean : masterRuleBeans){
+				  		
+			  		 
+			  		 if(!masterRuleBean.getDepartment().equals(userDetail.getGroup_name())){
+				  			continue;
+				  		}
+				  
+				  %>	
+				  
+				   var ldap_group_name_master = "<%=masterRuleBean.getDepartment()%>";
+				   var cluster_change_value_master = "<%=masterRuleBean.getCluster()%>";				  
+				   var checkNetwork = "<%=masterRuleBean.getNetwork()%>";
+				  		
+		  		
+				  	checkNetwork=checkNetwork.split(".");
+				  	if(ldap_group_name == ldap_group_name_master && cluster_change_value == cluster_change_value_master ){
+						  	if((network[0]==checkNetwork[0])&&(network[1]==checkNetwork[1])&&(network[2]==checkNetwork[2])){
+						  		
+						  		
+						  		
+						  		var netmask = checkNetwork.split("/");
+							  	if(netmask.length<=1){
+							  		netmask = checkNetwork.split("_");
+							  		
+							  		if(netmask.length<=1){
+							  			if(checkNetwork.includes("x")){			  		
+									  		netmask = [""];
+									  		netmask.push("24");
+									  		netmask.push("24");
+									  	}
+							  		}
+							  		
+							  	} 
+						  		
+						  		console.log("checkNetwork:"+checkNetwork);
+						  		console.log("netmask:"+netmask);	
+	
+						  	
+						  		var in_gateway = "<%=masterRuleBean.getGateway()%>";
+						  		console.log(in_gateway);
+						  		$("#input_Gateway").val(in_gateway);
+						  		$("#input_Netmask").val(netmask[1]);
+						  	    $("#input_Vlan").val("<%=masterRuleBean.getVlan()%>");  
+					
+						  	}	
+				  	}
+				  <%}%>
